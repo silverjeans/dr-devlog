@@ -227,3 +227,25 @@ export function getDDayColor(dDays: number): 'red' | 'amber' | 'green' | 'gray' 
   if (dDays <= 14) return 'amber';  // 14일 이내
   return 'green';                   // 여유
 }
+
+// ============================================
+// Comment (댓글) Types
+// ============================================
+
+export interface Comment {
+  id: number;
+  created_at: string;
+  dev_history_id: number;
+  author_name: string;
+  content: string;
+}
+
+export interface CommentInsert {
+  dev_history_id: number;
+  author_name: string;
+  content: string;
+}
+
+export interface CommentUpdate {
+  content?: string;
+}

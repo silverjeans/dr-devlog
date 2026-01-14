@@ -7,6 +7,8 @@ import type {
   Schedule,
   ScheduleInsert,
   ScheduleUpdate,
+  Comment,
+  CommentInsert,
 } from '@/types/database';
 
 // Supabase client configuration
@@ -339,5 +341,78 @@ export const scheduleApi = {
     }
 
     return data || [];
+  },
+};
+
+// Comment CRUD operations
+export const commentApi = {
+  // Fetch comments for a dev history entry
+  async getByDevHistoryId(devHistoryId: number): Promise<Comment[]> {
+    if (!isConfigured) return [];
+
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('dev_history_id', devHistoryId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  // Create new comment
+  async create(comment: CommentInsert): Promise<Comment> {
+    if (!isConfigured) throw new Error('Supabase not configured');
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert(comment)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating comment:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Delete comment
+  async delete(id: number): Promise<void> {
+    if (!isConfigured) throw new Error('Supabase not configured');
+
+    const { error } = await supabase.from('comments').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error deleting comment:', error);
+      throw error;
+    }
+  },
+
+  // Get comment count for multiple dev history entries
+  async getCountsByDevHistoryIds(devHistoryIds: number[]): Promise<Record<number, number>> {
+    if (!isConfigured) return {};
+
+    const { data, error } = await supabase
+      .from('comments')
+      .select('dev_history_id')
+      .in('dev_history_id', devHistoryIds);
+
+    if (error) {
+      console.error('Error fetching comment counts:', error);
+      throw error;
+    }
+
+    const counts: Record<number, number> = {};
+    (data || []).forEach((row) => {
+      counts[row.dev_history_id] = (counts[row.dev_history_id] || 0) + 1;
+    });
+
+    return counts;
   },
 };

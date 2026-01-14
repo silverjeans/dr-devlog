@@ -38,6 +38,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui";
+import { CommentSection } from "./comment-section";
 import { devHistoryApi } from "@/lib/supabase";
 import type { DevHistory, Domain, LogType, DevPhase } from "@/types/database";
 import { getDomainCategory } from "@/types/database";
@@ -324,6 +325,9 @@ export function HistoryDetail({ entry }: HistoryDetailProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* Comments section */}
+      <CommentSection devHistoryId={entry.id} />
 
       {/* Created time info */}
       <div className="text-sm text-muted-foreground text-center">

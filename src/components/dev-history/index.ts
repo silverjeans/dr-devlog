@@ -8,3 +8,4 @@ export { TimelineView } from "./timeline-view";
 export { DashboardFilter } from "./dashboard-filter";
 export { MeetingFormModal } from "./meeting-form-modal";
 export { MeetingDetail } from "./meeting-detail";
+export { CommentSection } from "./comment-section";
