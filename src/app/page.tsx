@@ -10,6 +10,7 @@ import {
   CheckCircle,
   TrendingUp,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -30,12 +31,18 @@ import { devHistoryApi } from "@/lib/supabase";
 import type { DevHistory, DevPhase, LogType } from "@/types/database";
 import { getDomainCategory } from "@/types/database";
 
+const PAGE_SIZE = 20;
+
 export default function HomePage() {
   const [entries, setEntries] = useState<DevHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLogModal, setShowLogModal] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Filter state
   const [selectedPhase, setSelectedPhase] = useState<DevPhase | "all">("all");
@@ -44,23 +51,50 @@ export default function HomePage() {
   >("all");
   const [selectedLogType, setSelectedLogType] = useState<LogType | "all">("all");
 
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
+  const fetchEntries = useCallback(async (reset: boolean = true) => {
+    if (reset) {
+      setLoading(true);
+      setPage(0);
+    } else {
+      setLoadingMore(true);
+    }
     setError(null);
+
+    const currentPage = reset ? 0 : page;
+
     try {
-      const data = await devHistoryApi.getAll();
-      setEntries(data);
+      const result = await devHistoryApi.getPaginated(undefined, currentPage, PAGE_SIZE);
+      if (reset) {
+        setEntries(result.data);
+      } else {
+        setEntries(prev => [...prev, ...result.data]);
+      }
+      setHasMore(result.hasMore);
+      setTotalCount(result.totalCount);
+      if (!reset) {
+        setPage(currentPage + 1);
+      } else {
+        setPage(1);
+      }
     } catch (err) {
       console.error("Failed to fetch entries:", err);
       setError("데이터를 불러오는데 실패했습니다.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, []);
+  }, [page]);
+
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      fetchEntries(false);
+    }
+  }, [fetchEntries, loadingMore, hasMore]);
 
   useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
+    fetchEntries(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Filter entries
   const filteredEntries = useMemo(() => {
@@ -128,7 +162,7 @@ export default function HomePage() {
   }, [entries]);
 
   const handleLogSuccess = useCallback(() => {
-    fetchEntries();
+    fetchEntries(true);
   }, [fetchEntries]);
 
   return (
@@ -319,7 +353,28 @@ export default function HomePage() {
                     {error}
                   </div>
                 ) : (
-                  <TimelineView entries={filteredEntries} />
+                  <>
+                    <TimelineView entries={filteredEntries} />
+                    {hasMore && (
+                      <div className="flex justify-center mt-6 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          onClick={loadMore}
+                          disabled={loadingMore}
+                          className="w-full max-w-xs"
+                        >
+                          {loadingMore ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              불러오는 중...
+                            </>
+                          ) : (
+                            <>더 보기 ({entries.length} / {totalCount})</>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>

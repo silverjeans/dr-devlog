@@ -26,9 +26,87 @@ if (!isConfigured && typeof window !== 'undefined') {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Pagination result type
+export interface PaginatedResult<T> {
+  data: T[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
 // Dev History CRUD operations
 export const devHistoryApi = {
-  // Fetch all dev history entries with optional filters
+  // Fetch dev history entries with pagination
+  async getPaginated(
+    filter?: DevHistoryFilter,
+    page: number = 0,
+    limit: number = 20
+  ): Promise<PaginatedResult<DevHistory>> {
+    if (!isConfigured) return { data: [], totalCount: 0, hasMore: false };
+
+    let query = supabase
+      .from('dev_history')
+      .select('*', { count: 'exact' })
+      .order('event_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(page * limit, (page + 1) * limit - 1);
+
+    if (filter) {
+      if (filter.dev_phase) {
+        if (Array.isArray(filter.dev_phase)) {
+          query = query.in('dev_phase', filter.dev_phase);
+        } else {
+          query = query.eq('dev_phase', filter.dev_phase);
+        }
+      }
+
+      if (filter.domain) {
+        if (Array.isArray(filter.domain)) {
+          query = query.in('domain', filter.domain);
+        } else {
+          query = query.eq('domain', filter.domain);
+        }
+      }
+
+      if (filter.log_type) {
+        if (Array.isArray(filter.log_type)) {
+          query = query.in('log_type', filter.log_type);
+        } else {
+          query = query.eq('log_type', filter.log_type);
+        }
+      }
+
+      if (filter.author_name) {
+        query = query.ilike('author_name', `%${filter.author_name}%`);
+      }
+
+      if (filter.search) {
+        query = query.or(
+          `title.ilike.%${filter.search}%,content.ilike.%${filter.search}%`
+        );
+      }
+
+      if (filter.date_from) {
+        query = query.gte('event_date', filter.date_from);
+      }
+      if (filter.date_to) {
+        query = query.lte('event_date', filter.date_to);
+      }
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching dev history:', error);
+      throw error;
+    }
+
+    const totalCount = count || 0;
+    const hasMore = (page + 1) * limit < totalCount;
+
+    return { data: data || [], totalCount, hasMore };
+  },
+
+  // Fetch all dev history entries with optional filters (legacy - for backward compatibility)
   async getAll(filter?: DevHistoryFilter): Promise<DevHistory[]> {
     if (!isConfigured) return [];
 
