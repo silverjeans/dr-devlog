@@ -4,6 +4,9 @@ import type {
   DevHistoryInsert,
   DevHistoryUpdate,
   DevHistoryFilter,
+  Schedule,
+  ScheduleInsert,
+  ScheduleUpdate,
 } from '@/types/database';
 
 // Supabase client configuration
@@ -231,5 +234,110 @@ export const storageApi = {
       console.error('Error deleting image:', error);
       throw error;
     }
+  },
+};
+
+// Schedule CRUD operations
+export const scheduleApi = {
+  // Fetch all schedules
+  async getAll(): Promise<Schedule[]> {
+    if (!isConfigured) return [];
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('*')
+      .order('due_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching schedules:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  // Fetch single schedule by ID
+  async getById(id: number): Promise<Schedule | null> {
+    if (!isConfigured) return null;
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching schedule by ID:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Create new schedule
+  async create(entry: ScheduleInsert): Promise<Schedule> {
+    if (!isConfigured) throw new Error('Supabase not configured');
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .insert(entry)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating schedule:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Update existing schedule
+  async update(id: number, entry: ScheduleUpdate): Promise<Schedule> {
+    if (!isConfigured) throw new Error('Supabase not configured');
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .update(entry)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating schedule:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Delete schedule
+  async delete(id: number): Promise<void> {
+    if (!isConfigured) throw new Error('Supabase not configured');
+
+    const { error } = await supabase.from('schedules').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error deleting schedule:', error);
+      throw error;
+    }
+  },
+
+  // Get active schedules (not completed)
+  async getActive(): Promise<Schedule[]> {
+    if (!isConfigured) return [];
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .select('*')
+      .neq('status', '완료')
+      .order('due_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching active schedules:', error);
+      throw error;
+    }
+
+    return data || [];
   },
 };

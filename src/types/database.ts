@@ -156,3 +156,74 @@ export function isMeeting(entry: DevHistory): boolean {
 export function isWarningType(logType: LogType): boolean {
   return logType === 'Alignment' || logType === 'Bug';
 }
+
+// ============================================
+// Schedule (일정 관리) Types
+// ============================================
+
+export type ScheduleStatus = '진행중' | '완료' | '지연' | '예정';
+export type SchedulePriority = '높음' | '보통' | '낮음';
+
+export interface Schedule {
+  id: number;
+  created_at: string;
+  title: string;
+  description: string | null;
+  start_date: string;
+  due_date: string;
+  status: ScheduleStatus;
+  priority: SchedulePriority;
+  dev_phase: DevPhase | null;
+}
+
+export interface ScheduleInsert {
+  title: string;
+  description?: string | null;
+  start_date?: string;
+  due_date: string;
+  status?: ScheduleStatus;
+  priority?: SchedulePriority;
+  dev_phase?: DevPhase | null;
+}
+
+export interface ScheduleUpdate {
+  title?: string;
+  description?: string | null;
+  start_date?: string;
+  due_date?: string;
+  status?: ScheduleStatus;
+  priority?: SchedulePriority;
+  dev_phase?: DevPhase | null;
+}
+
+export const SCHEDULE_STATUSES: { value: ScheduleStatus; label: string; color: string }[] = [
+  { value: '진행중', label: '진행중', color: 'blue' },
+  { value: '완료', label: '완료', color: 'green' },
+  { value: '지연', label: '지연', color: 'red' },
+  { value: '예정', label: '예정', color: 'gray' },
+];
+
+export const SCHEDULE_PRIORITIES: { value: SchedulePriority; label: string; color: string }[] = [
+  { value: '높음', label: '높음', color: 'red' },
+  { value: '보통', label: '보통', color: 'yellow' },
+  { value: '낮음', label: '낮음', color: 'gray' },
+];
+
+// Calculate D-Day from due date
+export function calculateDDay(dueDate: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+  const diffTime = due.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+// Get D-Day color based on remaining days
+export function getDDayColor(dDays: number): 'red' | 'amber' | 'green' | 'gray' {
+  if (dDays < 0) return 'red';      // 지남
+  if (dDays <= 7) return 'red';     // 7일 이내
+  if (dDays <= 14) return 'amber';  // 14일 이내
+  return 'green';                   // 여유
+}

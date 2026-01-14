@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import {
   Eye,
   Plus,
@@ -162,6 +163,22 @@ export default function HomePage() {
                 빠른 기록
               </Button>
             </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex gap-1 mt-4 border-b -mb-px">
+            <Link
+              href="/"
+              className="px-4 py-2 text-sm font-medium text-primary border-b-2 border-primary"
+            >
+              개발 히스토리
+            </Link>
+            <Link
+              href="/schedule"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border-b-2 border-transparent hover:border-slate-300"
+            >
+              일정 관리
+            </Link>
           </div>
         </div>
       </div>
