@@ -42,6 +42,7 @@ import {
   type DevHistoryInsert,
 } from "@/types/database";
 import { cn } from "@/lib/utils";
+import { IssueSelector } from "./issue-selector";
 
 interface LogFormModalProps {
   open: boolean;
@@ -75,6 +76,7 @@ export function LogFormModal({ open, onOpenChange, onSuccess }: LogFormModalProp
   const [uploadingImage, setUploadingImage] = useState(false);
   const [relatedLinks, setRelatedLinks] = useState<string[]>([]);
   const [newLink, setNewLink] = useState("");
+  const [relatedIssueIds, setRelatedIssueIds] = useState<number[]>([]);
 
   const resetForm = useCallback(() => {
     setEventDate(format(new Date(), "yyyy-MM-dd"));
@@ -87,6 +89,7 @@ export function LogFormModal({ open, onOpenChange, onSuccess }: LogFormModalProp
     setImageUrls([]);
     setRelatedLinks([]);
     setNewLink("");
+    setRelatedIssueIds([]);
     setError(null);
     setSuccess(false);
   }, []);
@@ -155,6 +158,7 @@ export function LogFormModal({ open, onOpenChange, onSuccess }: LogFormModalProp
         content: content.trim() || null,
         image_urls: imageUrls.length > 0 ? imageUrls : null,
         related_links: relatedLinks.length > 0 ? relatedLinks : null,
+        meta_data: relatedIssueIds.length > 0 ? { related_issues: relatedIssueIds } : undefined,
       };
 
       await devHistoryApi.create(data);
@@ -356,6 +360,12 @@ export function LogFormModal({ open, onOpenChange, onSuccess }: LogFormModalProp
               Spot 이미지, Mire Ring 캡처 등을 첨부하세요.
             </p>
           </div>
+
+          {/* 관련 이슈 연결 */}
+          <IssueSelector
+            selectedIds={relatedIssueIds}
+            onChange={setRelatedIssueIds}
+          />
 
           {/* 관련 링크 */}
           <div className="space-y-2">

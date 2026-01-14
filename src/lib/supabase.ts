@@ -416,3 +416,76 @@ export const commentApi = {
     return counts;
   },
 };
+
+// Related issues helper - fetch entries by IDs for issue linking
+export const relatedIssuesApi = {
+  // Get brief info for multiple entries by IDs (for displaying linked issues)
+  async getByIds(ids: number[]): Promise<Pick<DevHistory, 'id' | 'title' | 'log_type' | 'domain' | 'event_date'>[]> {
+    if (!isConfigured || ids.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from('dev_history')
+      .select('id, title, log_type, domain, event_date')
+      .in('id', ids)
+      .order('event_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching related issues:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  // Search issues for linking (exclude current entry)
+  async searchForLinking(searchTerm: string, excludeId?: number): Promise<Pick<DevHistory, 'id' | 'title' | 'log_type' | 'domain' | 'event_date'>[]> {
+    if (!isConfigured) return [];
+
+    let query = supabase
+      .from('dev_history')
+      .select('id, title, log_type, domain, event_date')
+      .order('event_date', { ascending: false })
+      .limit(20);
+
+    if (searchTerm) {
+      query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`);
+    }
+
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error searching issues:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  // Get recent issues for quick linking (exclude current entry)
+  async getRecent(excludeId?: number, limit: number = 10): Promise<Pick<DevHistory, 'id' | 'title' | 'log_type' | 'domain' | 'event_date'>[]> {
+    if (!isConfigured) return [];
+
+    let query = supabase
+      .from('dev_history')
+      .select('id, title, log_type, domain, event_date')
+      .order('event_date', { ascending: false })
+      .limit(limit);
+
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching recent issues:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+};

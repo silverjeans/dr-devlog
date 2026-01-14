@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -20,6 +20,8 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Info,
+  Link2,
+  ArrowRight,
 } from "lucide-react";
 import {
   Button,
@@ -39,9 +41,11 @@ import {
   DialogClose,
 } from "@/components/ui";
 import { CommentSection } from "./comment-section";
-import { devHistoryApi } from "@/lib/supabase";
+import { devHistoryApi, relatedIssuesApi } from "@/lib/supabase";
 import type { DevHistory, Domain, LogType, DevPhase } from "@/types/database";
 import { getDomainCategory } from "@/types/database";
+
+type RelatedIssueInfo = Pick<DevHistory, "id" | "title" | "log_type" | "domain" | "event_date">;
 
 interface HistoryDetailProps {
   entry: DevHistory;
@@ -132,6 +136,7 @@ export function HistoryDetail({ entry }: HistoryDetailProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [relatedIssues, setRelatedIssues] = useState<RelatedIssueInfo[]>([]);
 
   const LogTypeIcon = getLogTypeIcon(entry.log_type);
   const hasMetaData =
@@ -139,6 +144,22 @@ export function HistoryDetail({ entry }: HistoryDetailProps) {
     (entry.meta_data.diopterError ||
       entry.meta_data.modelEye ||
       entry.meta_data.repeatability);
+  const hasRelatedIssues = entry.meta_data?.related_issues && entry.meta_data.related_issues.length > 0;
+
+  // Fetch related issues info
+  useEffect(() => {
+    const fetchRelatedIssues = async () => {
+      if (hasRelatedIssues && entry.meta_data.related_issues) {
+        try {
+          const issues = await relatedIssuesApi.getByIds(entry.meta_data.related_issues);
+          setRelatedIssues(issues);
+        } catch (err) {
+          console.error("Failed to fetch related issues:", err);
+        }
+      }
+    };
+    fetchRelatedIssues();
+  }, [hasRelatedIssues, entry.meta_data.related_issues]);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -291,6 +312,48 @@ export function HistoryDetail({ entry }: HistoryDetailProps) {
                 </button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Related issues card */}
+      {relatedIssues.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Link2 className="h-5 w-5" />
+              관련 이슈 ({relatedIssues.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {relatedIssues.map((issue) => (
+                <li key={issue.id}>
+                  <Link
+                    href={`/history/${issue.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant={getDomainBadgeVariant(issue.domain)} className="text-xs">
+                          {issue.domain}
+                        </Badge>
+                        <Badge variant={getLogTypeBadgeVariant(issue.log_type)} className="text-xs">
+                          {issue.log_type}
+                        </Badge>
+                      </div>
+                      <p className="font-medium truncate group-hover:text-primary">
+                        {issue.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(issue.event_date), "yyyy년 MM월 dd일", { locale: ko })}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
       )}
