@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Calendar, Users, ListTodo, X, Plus, Loader2 } from "lucide-react";
+import { Calendar, Users, ListTodo, X, Plus, Loader2, Link2 } from "lucide-react";
 
 import {
   Button,
@@ -47,6 +47,10 @@ export function MeetingFormModal({
   const [actionItems, setActionItems] = useState<string[]>([]);
   const [newActionItem, setNewActionItem] = useState("");
 
+  // 관련 링크 관리
+  const [relatedLinks, setRelatedLinks] = useState<string[]>([]);
+  const [newLink, setNewLink] = useState("");
+
   const addAttendee = () => {
     if (newAttendee.trim() && !attendees.includes(newAttendee.trim())) {
       setAttendees([...attendees, newAttendee.trim()]);
@@ -69,6 +73,17 @@ export function MeetingFormModal({
     setActionItems(actionItems.filter((_, i) => i !== index));
   };
 
+  const addLink = () => {
+    if (newLink.trim() && !relatedLinks.includes(newLink.trim())) {
+      setRelatedLinks([...relatedLinks, newLink.trim()]);
+      setNewLink("");
+    }
+  };
+
+  const removeLink = (index: number) => {
+    setRelatedLinks(relatedLinks.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -86,6 +101,7 @@ export function MeetingFormModal({
           attendees: attendees.length > 0 ? attendees : undefined,
           action_items: actionItems.length > 0 ? actionItems : undefined,
         },
+        related_links: relatedLinks.length > 0 ? relatedLinks : null,
       };
 
       await devHistoryApi.create(meetingData);
@@ -100,6 +116,7 @@ export function MeetingFormModal({
       });
       setAttendees([]);
       setActionItems([]);
+      setRelatedLinks([]);
 
       onOpenChange(false);
       onSuccess?.();
@@ -275,6 +292,56 @@ export function MeetingFormModal({
                     <button
                       type="button"
                       onClick={() => removeActionItem(index)}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* 관련 링크 (Google Drive 등) */}
+          <div className="space-y-3">
+            <Label className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              관련 문서 링크
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Google Drive, Notion 등 문서 링크"
+                value={newLink}
+                onChange={(e) => setNewLink(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addLink();
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" size="icon" onClick={addLink}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {relatedLinks.length > 0 && (
+              <ul className="space-y-2">
+                {relatedLinks.map((link, index) => (
+                  <li
+                    key={index}
+                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border text-sm"
+                  >
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline truncate flex-1 mr-2"
+                    >
+                      {link}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => removeLink(index)}
                       className="text-muted-foreground hover:text-destructive"
                     >
                       <X className="h-4 w-4" />
