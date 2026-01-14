@@ -13,6 +13,8 @@ import {
   Trash2,
   Loader2,
   Target,
+  Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -64,6 +66,8 @@ export default function SchedulePage() {
     priority: "보통" as SchedulePriority,
     dev_phase: "" as DevPhase | "",
   });
+  const [assignees, setAssignees] = useState<string[]>([]);
+  const [newAssignee, setNewAssignee] = useState("");
   const [formLoading, setFormLoading] = useState(false);
 
   const fetchSchedules = useCallback(async () => {
@@ -94,7 +98,20 @@ export default function SchedulePage() {
       priority: "보통",
       dev_phase: "",
     });
+    setAssignees([]);
+    setNewAssignee("");
     setEditingSchedule(null);
+  };
+
+  const addAssignee = () => {
+    if (newAssignee.trim() && !assignees.includes(newAssignee.trim())) {
+      setAssignees([...assignees, newAssignee.trim()]);
+      setNewAssignee("");
+    }
+  };
+
+  const removeAssignee = (index: number) => {
+    setAssignees(assignees.filter((_, i) => i !== index));
   };
 
   const openCreateModal = () => {
@@ -113,6 +130,8 @@ export default function SchedulePage() {
       priority: schedule.priority,
       dev_phase: schedule.dev_phase || "",
     });
+    setAssignees(schedule.assignees || []);
+    setNewAssignee("");
     setShowModal(true);
   };
 
@@ -130,6 +149,7 @@ export default function SchedulePage() {
         status: formData.status,
         priority: formData.priority,
         dev_phase: formData.dev_phase || null,
+        assignees: assignees.length > 0 ? assignees : null,
       };
 
       if (editingSchedule) {
@@ -268,6 +288,19 @@ export default function SchedulePage() {
               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                 {schedule.description}
               </p>
+            )}
+            {schedule.assignees && schedule.assignees.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                {schedule.assignees.map((name, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
             )}
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>시작: {schedule.start_date}</span>
@@ -615,6 +648,49 @@ export default function SchedulePage() {
                   ]}
                 />
               </div>
+            </div>
+
+            {/* 담당자 */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                담당자
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="담당자 이름 추가"
+                  value={newAssignee}
+                  onChange={(e) => setNewAssignee(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addAssignee();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" size="icon" onClick={addAssignee}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {assignees.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {assignees.map((name, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm"
+                    >
+                      {name}
+                      <button
+                        type="button"
+                        onClick={() => removeAssignee(index)}
+                        className="hover:text-blue-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t">

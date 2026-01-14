@@ -174,6 +174,7 @@ export interface Schedule {
   status: ScheduleStatus;
   priority: SchedulePriority;
   dev_phase: DevPhase | null;
+  assignees: string[] | null;
 }
 
 export interface ScheduleInsert {
@@ -184,6 +185,7 @@ export interface ScheduleInsert {
   status?: ScheduleStatus;
   priority?: SchedulePriority;
   dev_phase?: DevPhase | null;
+  assignees?: string[] | null;
 }
 
 export interface ScheduleUpdate {
@@ -194,6 +196,7 @@ export interface ScheduleUpdate {
   status?: ScheduleStatus;
   priority?: SchedulePriority;
   dev_phase?: DevPhase | null;
+  assignees?: string[] | null;
 }
 
 export const SCHEDULE_STATUSES: { value: ScheduleStatus; label: string; color: string }[] = [
